@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools==75.1.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "egi-reviewer"
+version = "0.1.0"
+description = "EGI Reviewer: an independent second reading of each service in an importer run"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+egi-review = "review.cli:main"
+
+[tool.setuptools]
+packages = ["review"]
+
+[tool.setuptools.package-data]
+review = ["profile.md"]
