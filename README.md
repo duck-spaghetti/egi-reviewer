@@ -57,3 +57,16 @@ package and are not covered.
 ```sh
 python3 -m unittest discover -s tests -t . -v
 ```
+
+## Community text interpretation
+
+`egi-reviewer 0.2.0` adds `review.insertion.interpret(request, adapter)` for exact-
+quoted source proposals. The app owns provider transport, private preparation access,
+job accounting and canonical acceptance. The library makes at most one injected
+exchange, exposes no tools and never writes to a database. See
+[the versioned API and artifact](docs/insertion.md) for shapes, evidence rules,
+verification and the wheel hash. Deterministic `egi-review triage` remains unchanged.
+
+The reusable modules are `insertion.py` (orchestration/result validation),
+`insertion_fields.py` (frozen preparation vocabulary) and `insertion_evidence.py`
+(exact locators/redactions). CSV mapping follows in the separately approved batch set.
