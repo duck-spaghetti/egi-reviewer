@@ -101,3 +101,35 @@ previously60 tests in0.013s; full candidate suite77 tests in0.027s, not a produc
 latency benchmark. No shared environment was modified, no live model was called.
 The sibling development-checks tooling is not integrated in this branch; these are
 source, artifact and contract checks rather than a claimed Complete check profile.
+
+## Contextual classification — B06
+
+`review.classification.propose(request)` produces the same closed result profile
+without IA. Whole source labels or descriptions must match a supplied candidate's
+label or actual alias using NFC, casefold and whitespace only. Punctuation, accents
+and word order are retained; lexical scores never establish a match. Descriptions
+without an exact match abstain. More than5 equal alternatives abstain rather than
+silently dropping candidates. Missing source labels never become invented facts.
+The caller may instead use one `workbench.interpret` exchange for semantic proposals.
+
+The classification prompt permits description/network-context interpretations with
+original support and explicit human confirmation. It distinguishes activity/audience,
+false/default flags, proper names, appointment vs unknown cost, one service with
+level/time blocks, source-specific temporal claims, facility category vs unstated
+clinical services, and optional unverified sigla expansions. Prompt rules constrain
+the model; a structural validator cannot prove a free-text semantic explanation.
+Human review and separately approved gold/live evaluation remain necessary.
+
+The10 classification tests use synthetic equivalents of the explored H02/H09,
+S05/S09 and C06/C04 policies. They are newly authored fixtures, not records from the
+60-record holdout or approved annotations. Controlled Adapter results exercise
+allowed/rejected shapes and provenance; assertions about prompt instructions do not
+prove that a real model follows them. Baseline abstention is deliberate, with no
+semantic recall threshold or model-quality claim.
+
+B06 candidate0.5.0b2:87 source and87 isolated installed-wheel tests passed; two
+fixed-epoch builds match SHA256
+`3a2cea7859db552c11aa8b22a99de56b377bb30307fdd6b55a684daa03ed509e`.
+The50-record/100-basis deterministic path measured7.539ms per call (best of3×100),
+including request validation and result reconciliation. No predecessor classification
+API exists for a comparable baseline; B05 request validation alone measured1.684ms.

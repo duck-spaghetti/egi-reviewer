@@ -72,6 +72,30 @@ TASK_INSTRUCTIONS = {
     "classify_cards": "Classify each requested original label/description basis against supplied EGI candidates. Return an explicit outcome for every inspected basis; no literal source fact is created.",
     "group_labels": "Compare supplied contextual label members with original evidence and prior alternatives. Propose equivalent, related or ambiguous groups; never merge entities, services or taxonomy terms. Disclose mixed/unknown context and unsampled occurrence issues, with no common mapping or equivalent claim for incomplete members.",
 }
+TASK_INSTRUCTIONS["classify_cards"] += """
+Interpret labels using their original record context, source semantics, actual
+catalog definitions/aliases and the one requested axis/territory. A description
+or source-network context may justify a category even with no original category
+label; keep it an interpreted proposal requiring human confirmation. Cite original
+passages plus metadata supports when context drives the interpretation. Treat a
+proper name containing family/housing words as a name, not proof of accommodation.
+Separate offered activity from audience; a broad minor/family catalog label cannot
+prove unrestricted family access. False/default flags are not explicit exclusions,
+and a false paid flag does not establish free care. Unknown cost remains unknown.
+Related legal/help labels may describe one service without being perfect synonyms.
+Preserve explicit appointment conditions. Never split a service solely by course
+level or timetable; keep level/time blocks, contact hours and service hours distinct.
+Map and page schedules with unclear temporal applicability remain separate claims,
+never silently reconcile dates or select one as current. A school-network context
+may support an interpreted Italian-course proposal, not a literal source label.
+A consultorio facility name may support that category, never every clinical service
+inside a broad definition or unstated cost, eligibility, schedule or service count.
+An opaque abbreviation alone yields no category. You may offer a separate optional
+unverified expansion, requiring confirmation and independent supporting material
+before any category follows. Do not invent an expansion for every unknown word.
+No-match means no supplied match, never no possible taxonomy match. Disclose
+incomplete_catalog and missing scope/context rather than using outside terms.
+"""
 
 
 def _array(items: dict) -> dict:

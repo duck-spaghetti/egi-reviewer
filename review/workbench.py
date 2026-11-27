@@ -9,6 +9,7 @@ from copy import deepcopy
 import hashlib
 import json
 import re
+import unicodedata
 
 from .insertion import Adapter, _adapter_response
 from .insertion_fields import ContractError, closed
@@ -34,6 +35,11 @@ def request_digest(request: dict) -> str:
 def scope_key(shared_context: dict) -> str:
     """Bind semantic identity to the preparation and catalog snapshot, not a slice."""
     return request_digest({key: shared_context[key] for key in ("scope", "catalog_snapshot")})
+
+
+def normalize_label(value: str) -> str:
+    """Compare NFC, case and whitespace only; preserve accents and punctuation."""
+    return " ".join(unicodedata.normalize("NFC", value).casefold().split())
 
 
 def _require(condition: bool, code: str = "invalid_shape", path: str = "") -> None:

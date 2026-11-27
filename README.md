@@ -81,3 +81,8 @@ Package0.5.0b1 adds the independent CW1 workbench request/result validators,
 shared task schema/instructions, explicit partial coverage and one-exchange Adapter
 entrypoint. See [workbench protocol](docs/workbench.md). This controlled candidate
 does not claim Community gold/live acceptance; CSV mapping remains CW2.
+
+Package0.5.0b2 adds `review.classification.propose(request)` as a conservative
+exact-label/actual-alias baseline and contextual classification prompt policies.
+Optional semantic analysis still uses `review.workbench.interpret` with one injected
+exchange; no model or provider dependency is added.
