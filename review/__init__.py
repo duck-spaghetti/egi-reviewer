@@ -8,4 +8,4 @@ grouping preserves literal variants and original occurrences for contextual revi
 only the app owns transport, sessions, jobs, billing and canonical acceptance.
 """
 
-__version__ = "0.5.0"
+__version__ = "0.5.1"

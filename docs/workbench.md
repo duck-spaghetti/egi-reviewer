@@ -183,3 +183,29 @@ took0.072s; installed suite0.073s. No live IA/provider credential or shared venv
 Artifacts live in the owned ignored `.local/artifacts/community-cw1/` directory.
 The input-only historical `blocked_records` limitation is accepted in frozen
 provider requests; output diagnostics remain the closed19-code profile.
+
+## Classification coverage correction —0.5.1
+
+The final Spec review found that a model could return explicit basis abstentions
+while labeling the owning unit `analyzed`, causing the database to count validated
+work instead of its insufficient-context subset. Classification unit state is now
+derived from retained attributable proposal outcomes, independently of that supplied
+label: no processed outcome means `not_analyzed`; any explicit
+`insufficient_context` proposal means `insufficient_context`; otherwise the unit is
+`analyzed`. An insufficient-context diagnostic accompanies a derived abstention.
+Proposed/no-supplied-match outcomes remain inspected work; a proposed choice with an
+incomplete supplied catalog is not itself an abstention. Group scope state remains
+separate. Valid choices, independent sibling units and processed/unprocessed basis
+sets survive normalization; unresolved bases still force an incomplete result.
+
+Four new regression tests failed against0.5.0 before the correction and passed
+afterward. They cover all/mixed abstentions with inconsistent supplied states,
+partial basis success with an independent no-match sibling, absent outcomes, and
+useful partial-catalog choices. All103 source and103 isolated installed-wheel tests
+passed (the original99 remain unchanged), with no provider exchange or new dependency.
+Two fixed-epoch0.5.1 builds match SHA256
+`252e39b1ea10e0a3bf7f129833f462e9c42969cdc899f996e14778038d072b8c`;
+the0.5.0 artifact is retained unchanged. Source tests took0.056s and installed tests
+0.052s. The same50-record/100-basis validation measured4.346ms before and4.349ms after
+(best of3 batches of100 calls using isolated installed artifacts); these are local
+mechanical timings, not model latency or a quality measurement.

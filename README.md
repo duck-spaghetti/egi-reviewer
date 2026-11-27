@@ -91,3 +91,7 @@ Package0.5.0 adds `review.grouping.propose(request)` and the contextual group ta
 prompt. Literal spelling variants preserve every original occurrence; semantic
 equivalent/related/ambiguous proposals remain optional and require review. Record,
 label-inventory and comparison coverage stay distinct. No taxonomy/entity merge.
+
+Package 0.5.1 derives classification unit state from retained explicit basis outcomes:
+an abstention stays in the insufficient-context subset of analyzed work, including
+mixed/partial units. A supplied unit-state label cannot upgrade it to validated work.

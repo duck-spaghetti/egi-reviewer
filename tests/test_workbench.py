@@ -218,3 +218,66 @@ class WorkbenchTests(unittest.TestCase):
         label["label"] = "picked candidate text"
         with self.assertRaises(ContractError):
             validate_request(request)
+
+    def test_explicit_abstentions_override_supplied_classify_unit_state(self):
+        """Validated abstentions remain the insufficient-context subset of analyzed work."""
+        request = packet()
+        for supplied in ("analyzed", "not_analyzed"):
+            with self.subTest(supplied=supplied):
+                result = response(request)
+                for unit in result["unit_results"]:
+                    unit.update(state=supplied, diagnostics=[])
+                validated = validate_result(result, request)
+                self.assertEqual(validated["state"], "complete")
+                self.assertTrue(all(unit["state"] == "insufficient_context" for unit in validated["unit_results"]))
+                self.assertTrue(all("insufficient_context" in unit["diagnostics"] for unit in validated["unit_results"]))
+                self.assertEqual(len(validated["proposals"]), 4)
+
+    def test_mixed_abstention_keeps_valid_category_choice(self):
+        """One abstaining basis cannot relabel the unit validated or discard a valid choice."""
+        request = packet()
+        result = response(request)
+        result["unit_results"][0].update(state="analyzed", diagnostics=[])
+        result["proposals"][0].update(state="proposed", missing_context=[], choices=[{
+            "candidate_key": "catalog-1", "reason": "Literal label", "support_keys": ["support-0-category_label"]}])
+        validated = validate_result(result, request)
+        self.assertEqual(validated["unit_results"][0]["state"], "insufficient_context")
+        self.assertEqual(validated["proposals"][0]["choices"][0]["candidate_key"], "catalog-1")
+        self.assertEqual(len(validated["unit_results"][0]["processed_basis_keys"]), 2)
+
+    def test_partial_abstention_and_independent_no_match_are_derived_separately(self):
+        """Unresolved bases stay partial while independent explicit no-match stays analyzed."""
+        request = packet()
+        result = response(request)
+        result["unit_results"][0].update(state="analyzed", diagnostics=[])
+        result["proposals"].pop(1)
+        for proposal in result["proposals"][1:]:
+            proposal.update(state="no_supplied_match", missing_context=[])
+        validated = validate_result(result, request)
+        self.assertEqual(validated["state"], "incomplete")
+        self.assertEqual(validated["unit_results"][0]["state"], "insufficient_context")
+        self.assertEqual(validated["unit_results"][0]["processed_basis_keys"], ["basis-0-category_label"])
+        self.assertEqual(validated["unit_results"][0]["unprocessed_basis_keys"], ["basis-0-description"])
+        self.assertEqual(validated["unit_results"][1]["state"], "analyzed")
+
+    def test_absent_outcomes_and_partial_catalog_choices_do_not_imply_abstention(self):
+        """Missing work stays unprocessed; useful bounded-catalog choices stay analyzed."""
+        request = packet(labels=("Corsi di italiano",))
+        result = response(request)
+        result["unit_results"][0].update(state="analyzed", diagnostics=[])
+        result["proposals"] = []
+        missing = validate_result(result, request)
+        self.assertEqual(missing["unit_results"][0]["state"], "not_analyzed")
+        self.assertEqual(missing["unit_results"][0]["processed_basis_keys"], [])
+        self.assertEqual(missing["state"], "incomplete")
+        request["data"]["units"][0]["basis_keys"] = ["basis-0-category_label"]
+        request["catalog_context"]["complete"] = False
+        request["catalog_context"]["digest"] = context_digest(request["catalog_context"])
+        request["coverage"]["catalog_complete"] = False
+        result = response(request)
+        result["unit_results"][0]["diagnostics"] = []
+        result["proposals"][0].update(state="proposed", missing_context=["incomplete_catalog"], choices=[{
+            "candidate_key": "catalog-1", "reason": "Valid supplied choice", "support_keys": ["support-0-category_label"]}])
+        useful = validate_result(result, request)
+        self.assertEqual(useful["unit_results"][0]["state"], "analyzed")
+        self.assertEqual(useful["proposals"][0]["missing_context"], ["incomplete_catalog"])

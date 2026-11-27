@@ -373,7 +373,7 @@ def _hypotheses(value: object, record_key: str | None, supports: dict) -> set:
 
 
 def _recover_unit(value: dict, expected: dict, proposals: dict, ownership: Counter, request: dict) -> tuple[dict, list]:
-    """Retain attributable outcomes and demote bases missing explicit outcomes."""
+    """Derive classification state from retained outcomes and demote missing bases."""
     unit = deepcopy(_closed(value, "unit_result"))
     _require(unit["record_key"] == expected["record_key"] and unit["state"] in ("analyzed", "insufficient_context", "not_analyzed"), "unresolved_reference")
     processed, unresolved = set(_keys(unit["processed_basis_keys"])), set(_keys(unit["unprocessed_basis_keys"]))
@@ -406,6 +406,14 @@ def _recover_unit(value: dict, expected: dict, proposals: dict, ownership: Count
             codes.append("incomplete_bases")
         processed -= missing
         unresolved |= missing
+        if not processed:
+            unit["state"] = "not_analyzed"
+            unit["hypotheses"] = []
+        elif any(proposal["state"] == "insufficient_context" for proposal in retained):
+            unit["state"] = "insufficient_context"
+            codes.append("insufficient_context")
+        else:
+            unit["state"] = "analyzed"
     else:
         _require(not processed and not unresolved)
     if unit["state"] == "not_analyzed":
