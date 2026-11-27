@@ -46,7 +46,8 @@ def _span(value: Any, length: int, path: str) -> tuple[int, int]:
 
 def resolve(value: Any, path: str) -> Any:
     """Resolve one RFC6901 pointer without permissive indices or implicit fields."""
-    if not isinstance(path, str) or not re.match(r"^/(service|location)/", path):
+    if not isinstance(path, str) or not (re.match(r"^/(service|location)/", path)
+            or re.fullmatch(r"/source_facts/(0|[1-9][0-9]*)/source_value", path)):
         raise ContractError("invalid_shape", "/evidence/path")
     current = value
     for part in path[1:].split("/"):

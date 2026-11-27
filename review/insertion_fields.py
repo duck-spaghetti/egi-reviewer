@@ -1,7 +1,8 @@
 """Frozen B3.1 preparation vocabulary, independent of provider and importer code.
 
 `validate_body` checks proposed service/location structures and scalar domains;
-`dictionary` exposes the versioned field vocabulary for an adapter's output schema.
+`dictionary` exposes explicit v1/v2 adapter vocabularies; `validate_source_facts`
+checks literal entity/category claims without canonical resolution.
 No function resolves identities, normalizes contacts, geocodes or writes data.
 """
 from __future__ import annotations
@@ -11,6 +12,9 @@ from datetime import date, time
 from typing import Any
 
 VERSION = "egi-preparation-fields/1"
+VERSION_V2 = "egi-preparation-fields/2"
+SOURCE_FACT = {"fact_key": "str", "subject": "str", "kind": "str", "source_value": "str"}
+SOURCE_FACT_CHOICES = {"subject": ("service", "location"), "kind": ("organization_name", "category_label")}
 ESSENTIAL_FIELDS = {"name", "description", "value", "formatted", "line1", "locality", "postal_code",
                     "administrative_area", "country_code", "latitude", "longitude", "opens", "closes"}
 
@@ -167,8 +171,32 @@ def validate_body(body: Any, kind: str, path: str) -> None:
     _object(body, SERVICE if kind == "service" else LOCATION, path, location=kind == "location")
 
 
-def dictionary() -> dict:
-    """Return an independent serializable copy of the versioned field vocabulary."""
-    return {"version": VERSION, "service": dict(SERVICE), "location": dict(LOCATION),
+def dictionary(version: str = VERSION) -> dict:
+    """Return an explicit v1/v2 dictionary without changing canonical body grammar."""
+    if version not in (VERSION, VERSION_V2):
+        raise ContractError("unsupported_field", "/field_dictionary_version")
+    result = {"version": version, "service": dict(SERVICE), "location": dict(LOCATION),
             "components": {key: dict(value) for key, value in COMPONENTS.items()},
             "enums": {key: sorted(value) for key, value in ENUMS.items()}}
+    if version == VERSION_V2:
+        result.update(source_fact=dict(SOURCE_FACT), source_fact_choices={key: list(value) for key, value in SOURCE_FACT_CHOICES.items()})
+    return result
+
+
+def validate_source_facts(facts: Any) -> None:
+    """Validate local literal claims without granting canonical identities or roles."""
+    if not isinstance(facts, list) or len(facts) > 1000:
+        raise ContractError("invalid_shape", "/source_facts")
+    keys = set()
+    for index, fact in enumerate(facts):
+        path = f"/source_facts/{index}"
+        closed(fact, set(SOURCE_FACT), set(SOURCE_FACT), path)
+        key = fact["fact_key"]
+        if not isinstance(key, str) or not 1 <= len(key) <= 100 or key in keys:
+            raise ContractError("invalid_shape", path + "/fact_key")
+        keys.add(key)
+        for name, choices in SOURCE_FACT_CHOICES.items():
+            if not isinstance(fact[name], str) or fact[name] not in choices:
+                raise ContractError("unsupported_field", path + "/" + name)
+        if not isinstance(fact["source_value"], str) or not 1 <= len(fact["source_value"].strip()) <= 50000:
+            raise ContractError("invalid_shape", path + "/source_value")

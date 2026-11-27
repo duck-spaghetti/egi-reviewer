@@ -10,8 +10,8 @@ import hashlib
 import unittest
 from uuid import uuid4
 
-from review.insertion import INSTRUCTIONS, OUTPUT_SHAPE, interpret, validate_request
-from review.insertion_fields import VERSION, ContractError, dictionary
+from review.insertion import INSTRUCTIONS, OUTPUT_SHAPE, OUTPUT_SHAPE_V2, interpret, validate_request
+from review.insertion_fields import VERSION, VERSION_V2, ContractError, dictionary
 
 
 def request(text: str, *, original: bytes | None = None) -> dict:
@@ -258,6 +258,144 @@ class InterpretationTests(unittest.TestCase):
         validated = validate_request(req)
         validated["source_metadata"]["name"] = "Changed"
         self.assertEqual(req["source_metadata"]["name"], "Public test source")
+
+
+class SourceFactTests(unittest.TestCase):
+    """Versioned literal entity/category proposals through the one-dispatch boundary."""
+
+    def source_request(self, text: str, **kwargs) -> dict:
+        """Select v2 explicitly while reusing the exact-input fixture contract."""
+        return {**request(text, **kwargs), "schema_version": 2,
+                "field_dictionary_version": VERSION_V2, "requested_output_shape": OUTPUT_SHAPE_V2}
+
+    def source_candidate(self, req: dict, name: str, labels: list[tuple[str, str]], key="desk") -> dict:
+        """Attach per-candidate literal claims with independent evidence identities."""
+        proposed = candidate(req, name, key)
+        proposed["source_facts"] = []
+        for index, (kind, value) in enumerate(labels):
+            proposed["source_facts"].append({"fact_key": f"fact{index}", "subject": "service",
+                                             "kind": kind, "source_value": value})
+            proposed["evidence"].append(citation(req, f"/source_facts/{index}/source_value", value))
+        return proposed
+
+    def source_result(self, req: dict, proposed: list) -> dict:
+        """Wrap controlled candidates in the matching v2 result envelope."""
+        return {**result(req, proposed), "schema_version": 2}
+
+    def test_shared_organization_keeps_local_bindings_for_two_services(self):
+        """A shared source claim stays on both selected candidates without UUIDs."""
+        req = self.source_request("Associazione Alfa. Mensa: pasti. Docce: igiene.")
+        proposals = [self.source_candidate(req, name, [("organization_name", "Associazione Alfa")], name)
+                     for name in ("Mensa", "Docce")]
+        actual = interpret(req, FakeAdapter(self.source_result(req, proposals)))
+        self.assertEqual(actual["state"], "complete")
+        for proposed in actual["candidates"]:
+            self.assertEqual(proposed["source_facts"][0]["source_value"], "Associazione Alfa")
+            self.assertNotIn("organizations", proposed["service"])
+        self.assertNotEqual(proposals[0]["evidence"][1]["id"], proposals[1]["evidence"][1]["id"])
+
+    def test_multiple_organizations_and_source_label_stay_unresolved(self):
+        """Literal source categories are preserved independently of an EGI term."""
+        req = self.source_request("Sportello. Enti: Alfa, Beta. Tipologia: Orientamento sociale.")
+        proposed = self.source_candidate(req, "Sportello", [("organization_name", "Alfa"),
+            ("organization_name", "Beta"), ("category_label", "Orientamento sociale")])
+        actual = interpret(req, FakeAdapter(self.source_result(req, [proposed])))
+        self.assertEqual(actual["candidates"][0]["source_facts"], proposed["source_facts"])
+        self.assertNotIn("classifications", actual["candidates"][0]["service"])
+
+    def test_ambiguous_desk_name_has_no_invented_organization(self):
+        """Controlled gold leaves the generic desk name as a service name only."""
+        req = self.source_request("Sportello Assistenza")
+        proposed = self.source_candidate(req, "Sportello Assistenza", [])
+        actual = interpret(req, FakeAdapter(self.source_result(req, [proposed])))
+        self.assertEqual(actual["candidates"][0]["source_facts"], [])
+        self.assertIn("ambiguous desk name", INSTRUCTIONS)
+
+    def test_unicode_original_hash_and_crlf_offsets(self):
+        """Literal spelling remains exact with a BOM hash and code-point locators."""
+        text = "🟠 Café\r\nEnte: Équipe À."
+        req = self.source_request(text, original=b"\xef\xbb\xbf" + text.encode())
+        proposed = self.source_candidate(req, "Café", [("organization_name", "Équipe À")])
+        actual = interpret(req, FakeAdapter(self.source_result(req, [proposed])))
+        self.assertEqual(actual["state"], "complete")
+        self.assertEqual(actual["candidates"][0]["evidence"][1]["span"]["start"], text.index("Équipe À"))
+
+    def test_versions_must_match_before_dispatch_and_in_result(self):
+        """No fallback silently discards v2 facts or dispatches an unknown protocol."""
+        for changes in ({"schema_version": 3}, {"field_dictionary_version": VERSION},
+                        {"requested_output_shape": OUTPUT_SHAPE}):
+            req = self.source_request("Sportello")
+            req.update(changes)
+            adapter = FakeAdapter(None)
+            with self.subTest(changes=changes), self.assertRaises(ContractError):
+                interpret(req, adapter)
+            self.assertEqual(adapter.calls, [])
+        req = self.source_request("Sportello")
+        actual = interpret(req, FakeAdapter(result(req, [candidate(req, "Sportello")])))
+        self.assertEqual((actual["schema_version"], actual["state"], actual["candidates"]), (2, "incomplete", []))
+        legacy = request("Sportello")
+        extra = self.source_candidate(legacy, "Sportello", [])
+        self.assertEqual(interpret(legacy, FakeAdapter(result(legacy, [extra])))["state"], "incomplete")
+
+    def test_literal_fact_cannot_contain_ids_roles_or_selections(self):
+        """Closed facts reject publication/identity/matching authority from a provider."""
+        req = self.source_request("Sportello Alfa")
+        for field, value in (("organization_id", str(uuid4())), ("role_code", "owner"),
+                             ("fact_id", str(uuid4())), ("selected", {}), ("value", "Edited")):
+            proposed = self.source_candidate(req, "Sportello", [("organization_name", "Alfa")])
+            proposed["source_facts"][0][field] = value
+            actual = interpret(req, FakeAdapter(self.source_result(req, [proposed])))
+            with self.subTest(field=field):
+                self.assertEqual(actual["candidates"], [])
+                self.assertEqual(actual["diagnostics"][0]["code"], "invalid_shape")
+
+    def test_fact_keys_kinds_and_exact_leaf_evidence_are_required(self):
+        """Duplicate/unsupported claims and missing or transformed literal proof fail."""
+        req = self.source_request("Sportello Alfa Beta")
+        original = self.source_candidate(req, "Sportello", [("organization_name", "Alfa"), ("organization_name", "Beta")])
+        variants = []
+        duplicate = deepcopy(original); duplicate["source_facts"][1]["fact_key"] = "fact0"; variants.append(duplicate)
+        unsupported = deepcopy(original); unsupported["source_facts"][0]["kind"] = "owner"; variants.append(unsupported)
+        missing = deepcopy(original); del missing["evidence"][1]; variants.append(missing)
+        false_literal = deepcopy(original); false_literal["source_facts"][0]["source_value"] = "Invented"; false_literal["evidence"][1]["kind"] = "interpreted"; variants.append(false_literal)
+        for proposed in variants:
+            with self.subTest(proposed=proposed):
+                actual = interpret(req, FakeAdapter(self.source_result(req, [proposed])))
+                self.assertEqual(actual["state"], "incomplete")
+                self.assertEqual(actual["candidates"], [])
+
+    def test_one_candidate_cannot_reuse_another_citation_identity(self):
+        """Shared source text needs separate candidate-bound evidence records."""
+        req = self.source_request("Alfa. Mensa. Docce.")
+        proposals = [self.source_candidate(req, name, [("organization_name", "Alfa")], name) for name in ("Mensa", "Docce")]
+        proposals[1]["evidence"][1] = deepcopy(proposals[0]["evidence"][1])
+        actual = interpret(req, FakeAdapter(self.source_result(req, proposals)))
+        self.assertEqual(actual["diagnostics"], [{"code": "invalid_quote", "path": "/evidence/id"}])
+
+    def test_redacted_facts_and_nonliteral_paths_are_rejected(self):
+        """Fact keys/subjects are metadata, not citably verified factual values."""
+        req = self.source_request("Sportello Al  fa")
+        start = req["text"].index("  ")
+        req["locator_map"]["redactions"] = [{"start": start, "end": start + 2}]
+        proposed = self.source_candidate(req, "Sportello", [("organization_name", "Al  fa")])
+        actual = interpret(req, FakeAdapter(self.source_result(req, [proposed])))
+        self.assertEqual(actual["diagnostics"][0]["code"], "redacted_value")
+        req["locator_map"]["redactions"] = []
+        proposed["evidence"][1]["path"] = "/source_facts/0/fact_key"
+        self.assertEqual(interpret(req, FakeAdapter(self.source_result(req, [proposed])))["diagnostics"][0]["code"], "invalid_shape")
+
+    def test_v2_dictionary_and_uncertain_outcome_preserve_boundary(self):
+        """Unknown/provider-failure handling retains v2 and leaves usage on adapter."""
+        self.assertNotIn("source_fact", dictionary())
+        fields = dictionary(VERSION_V2); fields["source_fact"]["invented"] = "str"
+        self.assertNotIn("invented", dictionary(VERSION_V2)["source_fact"])
+        req = self.source_request("Sportello")
+        adapter = FakeAdapter(None, "uncertain")
+        actual = interpret(req, adapter)
+        self.assertEqual(actual["schema_version"], 2)
+        self.assertEqual(actual["diagnostics"], [{"code": "provider_uncertain"}])
+        self.assertEqual(len(adapter.calls), 1)
+        self.assertEqual(adapter.response["usage"]["input_tokens"], 50)
 
 
 if __name__ == "__main__":

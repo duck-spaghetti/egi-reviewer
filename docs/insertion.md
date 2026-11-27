@@ -102,3 +102,52 @@ version/hash, not import a mutable neighboring checkout. It was installed into t
 isolated Reviewer environment and imported with Python `-I` from outside the source
 tree; installed CLI help also worked. Final combined review and human corpus/model/
 provider acceptance remain pending. General Reviewer comparison EGI-61 is unchanged.
+
+## Literal facts v2 — EGI-115 / package0.3.0
+
+Version1 remains the explicit default for existing callers. To request v2 use all
+three matching values: schema_version2, field_dictionary_version
+`egi-preparation-fields/2`, requested_output_shape `interpretation.result.v2`.
+Mixed or unsupported versions fail before calling the adapter. A v2 result must
+also declare version2; incomplete/refused/uncertain/error results retain the requested
+version instead of silently falling back to v1.
+
+The service/location aggregate vocabulary is unchanged. Each v2 candidate requires
+`source_facts`, possibly empty. Each entry has exactly fact_key (nonempty local
+string, at most100 characters), subject (service/location), kind
+(organization_name/category_label) and source_value (nonblank literal source spelling,
+at most50,000 code points). At most1,000 facts per candidate; keys are unique within
+the candidate and scoped by candidate_key. Shared organization claims in different
+services remain distinct per-candidate facts. The app/database later allocate stable
+private UUIDs and initialize their editable values; model keys are not canonical IDs.
+
+Every literal fact needs evidence at its exact `/source_facts/<index>/source_value`
+leaf. Existing input hash, Unicode offsets, redaction and exact quote checks apply;
+source_value must occur in every cited quotation even if an association is marked
+interpreted. Evidence cannot target fact_key, kind or subject. v2 evidence IDs are
+unique across candidates, so another candidate's evidence identity cannot be reused.
+The same actual public passage may support two claims with independent bindings.
+
+Do not infer an organization merely from an ambiguous desk name, or replace a source
+category label by a synthesized EGI class. Multiple explicit organizations/categories
+remain distinguishable. No fact_id, organization_id, term_id, role, edited value or
+selected resolution is permitted in the extraction fact object. Actual catalog
+matching follows EGI-118; editorial creation/confirmation are outside this module.
+`dictionary(VERSION_V2)` adds independent source_fact/source_fact_choices descriptions
+for the app-owned Structured Outputs schema; its transport consumer is EGI-116.
+
+The validator checks structure, provenance, literal support and candidate bindings;
+it does not prove the model chose the right organization/service association from
+natural language. Human-annotated shared/ambiguous-service cases and real-provider
+quality evaluation remain EGI-112/113, with their existing gates and thresholds.
+
+All44 stdlib tests pass (the original34 plus10 v2 fixture journeys). No real model
+request, repair call, source acquisition, benchmark score or paid usage occurred.
+The source-only wheel was built twice using the command above, with identical SHA256:
+
+`egi_reviewer-0.3.0-py3-none-any.whl`
+`85c722cd976fc1da05d653c8586555ed77a309bfe4fd716b41a52a021ffea02c`.
+
+It is retained under the workspace `.local/artifacts/community/`. EGI-116 must pin
+and verify this artifact before enabling the v2 worker path; existing v1 app runs
+remain on their current compatible dependency until that consumer ticket.
