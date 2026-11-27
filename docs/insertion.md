@@ -157,3 +157,9 @@ in v2 extraction (including role-only organization objects without IDs). This ke
 roles out of provider authority while retaining the existing v1 contract. The new
 regression failed on0.3.0 and passes on0.3.1. The earlier0.3.0 wheel remains retained
 unchanged; consumers must use the0.3.1 hash above.
+
+Reviewer0.4.0 additionally supports bounded local matching and an optional
+catalog_context on v2 requests, with per-candidate unconfirmed matches in that same
+single exchange. See [matching](matching.md) for context keys/digest, effective
+adoption checks, ordinal suggestions, strict supplied-key validation and the owning
+worker's configuration/cache obligations. Context-free v1/v2 shapes are unchanged.

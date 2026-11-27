@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "egi-reviewer"
-version = "0.3.1"
+version = "0.4.0"
 description = "EGI Reviewer: an independent second reading of each service in an importer run"
 requires-python = ">=3.11"
 dependencies = []

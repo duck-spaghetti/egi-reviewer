@@ -11,6 +11,7 @@ from copy import deepcopy
 import re
 from typing import Any, Iterator, Protocol
 
+from .matching import validate_context, validate_matches
 from .insertion_evidence import resolve, uuid_text, validate_evidence, validate_map
 from .insertion_fields import COMPONENTS, ESSENTIAL_FIELDS, LOCATION, SERVICE, VERSION, VERSION_V2, ContractError, closed, validate_body, validate_source_facts
 
@@ -42,6 +43,11 @@ Unknown organizations remain unresolved; do not turn an ambiguous desk name into
 Keep source labels distinct from inferred EGI classifications. Shared organizations can be stated for
 several services only with support; allocate separate evidence IDs for each candidate's claim.
 Emit no canonical fact_id, organization_id, term_id, organization role or resolution selection.
+When catalog_context is supplied, add matches per candidate using only that context's candidate_key
+and digest, bound to a source fact_key. Each match has fact_key, context_digest and ordered choices
+(candidate_key, reason). Rank is ordinal, never a confidence percentage. Empty choices mean no match.
+Do not invent a term or cross an axis; source spelling and quote requirements remain unchanged.
+A match is an unconfirmed suggestion. No selected reference, role or canonical body relationship.
 No database, external tools, URL retrieval, repair calls or publication operation is available."""
 
 
@@ -61,7 +67,7 @@ def _version(value: Any, path: str, expected: int | None = None) -> None:
 
 def validate_request(request: Any) -> dict:
     """Return an independent validated request; invalid input makes no adapter call."""
-    closed(request, REQUEST_KEYS, REQUEST_KEYS, "/request")
+    closed(request, REQUEST_KEYS | {"catalog_context"}, REQUEST_KEYS, "/request")
     request = deepcopy(request)
     _version(request["schema_version"], "/schema_version")
     if request["task"] != "extract_text":
@@ -81,6 +87,10 @@ def validate_request(request: Any) -> dict:
     for name, value in metadata.items():
         if value is not None and (not isinstance(value, str) or len(value) > 4000):
             raise ContractError("invalid_shape", f"/source_metadata/{name}")
+    if "catalog_context" in request:
+        if request["schema_version"] != 2:
+            raise ContractError("unsupported_field", "/catalog_context")
+        request["catalog_context"] = validate_context(request["catalog_context"], provider=True)
     validate_map(request["locator_map"], request["text"])
     return request
 
@@ -92,7 +102,9 @@ def _diagnostics(value: Any, keys: set[str]) -> None:
     field_keys = set(SERVICE) | set(LOCATION) | REQUEST_KEYS | RESULT_KEYS | CANDIDATE_KEYS | {
         "service", "location", "body", "adapter", "outcome", "provider_request_id", "structured_output", "usage",
         "error_code", "input_tokens", "output_tokens", "cached_input_tokens", "reasoning_tokens", "redactions",
-        "span", "start", "end", "quote", "note", "id", "source_facts", "fact_key", "subject", "source_value"}
+        "span", "start", "end", "quote", "note", "id", "source_facts", "fact_key", "subject", "source_value",
+        "catalog_context", "digest", "context_digest", "entries", "target", "axis_id", "choices", "matches", "candidate_key", "reason",
+        "kind", "as_of", "complete", "published", "active", "effective_from", "effective_until", "broader", "territory_id", "context", "schema_version"}
     for component in COMPONENTS.values():
         field_keys.update(component)
     for diagnostic in value:
@@ -159,6 +171,8 @@ def validate_result(result: Any, request: dict) -> dict:
     keys, evidence_ids = set(), set()
     for candidate in result["candidates"]:
         candidate_keys = CANDIDATE_KEYS | ({"source_facts"} if request["schema_version"] == 2 else set())
+        if "catalog_context" in request:
+            candidate_keys = candidate_keys | {"matches"}
         closed(candidate, candidate_keys, candidate_keys, "/candidates")
         key = candidate["candidate_key"]
         if not isinstance(key, str) or not 1 <= len(key) <= 100 or key in keys:
@@ -177,6 +191,8 @@ def validate_result(result: Any, request: dict) -> dict:
                     or candidate["location"].get("body", {}).get("organizations")):
                 raise ContractError("unresolved_reference", "/service/organizations")
             validate_source_facts(candidate["source_facts"])
+            if "catalog_context" in request:
+                validate_matches(candidate["matches"], candidate["source_facts"], request["catalog_context"])
         validate_evidence(candidate["evidence"], candidate, request)
         if request["schema_version"] == 2:
             current = {item["id"] for item in candidate["evidence"]}
