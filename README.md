@@ -1,3 +1,8 @@
+# Development CI — EGI-139
+
+See [owning CI verification](docs/development-ci.md) for the PR-to-dev workflow, required-check
+identity, selected runtime and actual enforcement-evidence boundary.
+
 # Current development checks — EGI-133
 
 ```sh
