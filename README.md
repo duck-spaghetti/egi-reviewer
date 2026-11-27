@@ -76,3 +76,8 @@ with exact evidence and no canonical identity/write authority. See
 [the v2 contract and artifact](docs/insertion.md#literal-facts-v2--egi-115--package031).
 The app consumes the versioned field dictionary and owns transport/schema generation;
 real-provider quality acceptance remains separately gated.
+
+Package0.5.0b1 adds the independent CW1 workbench request/result validators,
+shared task schema/instructions, explicit partial coverage and one-exchange Adapter
+entrypoint. See [workbench protocol](docs/workbench.md). This controlled candidate
+does not claim Community gold/live acceptance; CSV mapping remains CW2.
