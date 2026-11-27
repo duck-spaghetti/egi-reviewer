@@ -348,6 +348,9 @@ class SourceFactTests(unittest.TestCase):
             with self.subTest(field=field):
                 self.assertEqual(actual["candidates"], [])
                 self.assertEqual(actual["diagnostics"][0]["code"], "invalid_shape")
+        proposed = self.source_candidate(req, "Sportello", [("organization_name", "Alfa")])
+        proposed["service"]["organizations"] = [{"role_code": "owner"}]
+        self.assertEqual(interpret(req, FakeAdapter(self.source_result(req, [proposed])))["candidates"], [])
 
     def test_fact_keys_kinds_and_exact_leaf_evidence_are_required(self):
         """Duplicate/unsupported claims and missing or transformed literal proof fail."""

@@ -173,6 +173,9 @@ def validate_result(result: Any, request: dict) -> dict:
         else:
             raise ContractError("unresolved_reference", "/location")
         if request["schema_version"] == 2:
+            if (candidate["service"].get("organizations") or candidate["service"].get("classifications")
+                    or candidate["location"].get("body", {}).get("organizations")):
+                raise ContractError("unresolved_reference", "/service/organizations")
             validate_source_facts(candidate["source_facts"])
         validate_evidence(candidate["evidence"], candidate, request)
         if request["schema_version"] == 2:

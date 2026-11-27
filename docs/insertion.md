@@ -103,7 +103,7 @@ isolated Reviewer environment and imported with Python `-I` from outside the sou
 tree; installed CLI help also worked. Final combined review and human corpus/model/
 provider acceptance remain pending. General Reviewer comparison EGI-61 is unchanged.
 
-## Literal facts v2 — EGI-115 / package0.3.0
+## Literal facts v2 — EGI-115 / package0.3.1
 
 Version1 remains the explicit default for existing callers. To request v2 use all
 three matching values: schema_version2, field_dictionary_version
@@ -145,9 +145,15 @@ All44 stdlib tests pass (the original34 plus10 v2 fixture journeys). No real mod
 request, repair call, source acquisition, benchmark score or paid usage occurred.
 The source-only wheel was built twice using the command above, with identical SHA256:
 
-`egi_reviewer-0.3.0-py3-none-any.whl`
-`85c722cd976fc1da05d653c8586555ed77a309bfe4fd716b41a52a021ffea02c`.
+`egi_reviewer-0.3.1-py3-none-any.whl`
+`18b83ded49a89e916cda8ebafd1be80cf88cb642aa2e57011fa961d3e84dfdd2`.
 
 It is retained under the workspace `.local/artifacts/community/`. EGI-116 must pin
 and verify this artifact before enabling the v2 worker path; existing v1 app runs
 remain on their current compatible dependency until that consumer ticket.
+
+The0.3.1 patch also rejects nonempty canonical organization/classification components
+in v2 extraction (including role-only organization objects without IDs). This keeps
+roles out of provider authority while retaining the existing v1 contract. The new
+regression failed on0.3.0 and passes on0.3.1. The earlier0.3.0 wheel remains retained
+unchanged; consumers must use the0.3.1 hash above.

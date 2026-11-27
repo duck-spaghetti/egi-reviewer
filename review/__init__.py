@@ -4,4 +4,4 @@ Deterministic triage and injected-adapter interpretation remain separate entrypo
 only the app owns transport, sessions, jobs, billing and canonical acceptance.
 """
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"

@@ -71,8 +71,8 @@ The reusable modules are `insertion.py` (orchestration/result validation),
 `insertion_fields.py` (frozen preparation vocabulary) and `insertion_evidence.py`
 (exact locators/redactions). CSV mapping follows in the separately approved batch set.
 
-Package0.3.0 adds explicit v2 literal organization/category proposals alongside v1,
+Package0.3.1 adds explicit v2 literal organization/category proposals alongside v1,
 with exact evidence and no canonical identity/write authority. See
-[the v2 contract and artifact](docs/insertion.md#literal-facts-v2--egi-115--package030).
+[the v2 contract and artifact](docs/insertion.md#literal-facts-v2--egi-115--package031).
 The app consumes the versioned field dictionary and owns transport/schema generation;
 real-provider quality acceptance remains separately gated.
