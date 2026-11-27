@@ -1,3 +1,39 @@
+# Current development checks — EGI-133
+
+```sh
+python3 scripts/check.py --profile quick --json
+python3 scripts/check.py --profile complete --json
+```
+
+Activate the selected Python/build environment. This repository owns its checks;
+shared reporting, commit-title policy and hook installer are consumed from one exact
+app Git revision recorded in `.checks/tool-source.json`. Set EGI_DEVTOOLS_SOURCE to
+that source checkout if its default sibling location is unavailable. All imported
+shared files must match the pinned commit before they execute; missing/mismatched
+source returns blocked (exit2). No new web runtime dependency is introduced.
+
+Commit-msg/pre-push/CI use the same canonical validator through
+`python3 scripts/commit_guard.py`. `python3 scripts/install_hooks.py` activates only
+this assigned worktree's hooks and preserves unrelated hook paths. Ordinary titles
+use EGI-positive-number: summary; merge/revert handling and exact legacy SHA exceptions
+follow the shared policy. Local checkpoints may be incomplete; pre-push requires
+clean matching source, passed Complete and applicable Integration. Required remote
+CI enforcement remains session3 work, not evidence from hook configuration alone.
+
+Quick runs source tests; Complete and Integration additionally build twice with the
+selected setuptools75.1.0 backend, require byte-identical wheels, install offline
+into an owned isolated target and run copied tests from an isolated cwd using that
+installed package. Python -I and an import-path assertion exclude the source checkout.
+Use the selected build environment including wheel; no network/provider request
+is part of this command. Artifact identity is retained in `.local/wheel-last.json`
+and `.local/artifacts/`; build/installed-test output is `.local/wheel-last.log`.
+
+Exit0 means passed,1 failed and2 prerequisite-blocked. Common JSON schema1 reports
+the selected profile, owning source commit, check status/reasons and timings.
+Importer/sources and current product feature integration stay outside this scope.
+
+## Earlier component setup and evidence
+
 # EGI Reviewer
 
 A second, independent reading of each service an importer delivered. It reads an importer
