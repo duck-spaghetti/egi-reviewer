@@ -199,3 +199,8 @@ class MatchingTests(unittest.TestCase):
         with self.assertRaises(ContractError):
             interpret(req, adapter)
         self.assertEqual(adapter.calls, [])
+
+    def test_digest_matches_the_native_database_golden_vector(self) -> None:
+        """Sorted compact UTF8 JSON hashes identically in Python and PostgreSQL."""
+        self.assertEqual(context_digest({'z': [True, None, 'Caffè'], 'a': 1}),
+                         '9544cd924c9e1b36939b292dd3b977c282ae62a13d85e5f1d37d6429847fdae2')
