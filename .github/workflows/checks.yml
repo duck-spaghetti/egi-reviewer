@@ -40,8 +40,6 @@ jobs:
         run: python scripts/commit_guard.py range "$EGI_BASE_SHA" HEAD
       - name: Run owning Complete profile
         run: python scripts/check.py --profile complete --json > .local/ci-report.json
-      - name: Controlled negative CI proof
-        run: exit 1
       - name: Retain identified reports and artifacts
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
