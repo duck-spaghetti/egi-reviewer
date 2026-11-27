@@ -96,6 +96,26 @@ before any category follows. Do not invent an expansion for every unknown word.
 No-match means no supplied match, never no possible taxonomy match. Disclose
 incomplete_catalog and missing scope/context rather than using outside terms.
 """
+TASK_INSTRUCTIONS["group_labels"] += """
+Keep equivalent, related and ambiguous relations distinct. Same spelling alone
+does not establish shared meaning across records, source types, territories or
+axes. Deterministic seeds identify conservative spelling variants; assess actual
+context before any semantic equivalence. Preserve all original spelling variants,
+counts, exact version-bound occurrences, prior candidate alternatives and issues.
+One contextual label unit can represent multiple occurrences; a singleton member
+array may group those repeated occurrences when its count and full support justify
+it. Distinct label-unit count is not occurrence count. Materialized interpreted
+labels use their original description text and description-kind bases; never
+recast them as literal source labels or choose a display category arbitrarily.
+Cross-packet/source comparisons require original supporting passages alongside
+prior proposals, not just prior AI summaries. A candidate absent from the current
+catalog slice cannot be returned. Disclose prior incomplete_catalog explicitly.
+Related education offers can remain one reviewable group without claiming synonymy
+or replacing their individual category alternatives. Unknown/mixed scope or omitted
+occurrences require per-member issues, related/ambiguous relation and no mapping.
+No proposed group completes omitted inventory, changes a source claim, reorganizes
+the taxonomy, or merges a service/entity. All mappings and group edits require review.
+"""
 
 
 def _array(items: dict) -> dict:

@@ -251,7 +251,8 @@ def _data(request: dict) -> None:
         _require(not sets["required_record_keys"] and sets["reference_record_keys"] == set(records), "unresolved_reference")
         for seed in _index(data["seed_groups"], "seed", "group_key").values():
             keys = _keys(seed["unit_keys"])
-            _require(len(keys) >= 2 and set(keys) <= set(labels) and seed["relation"] in ("equivalent", "related", "ambiguous"))
+            _require(bool(keys) and set(keys) <= set(labels) and seed["relation"] in ("equivalent", "related", "ambiguous"))
+            _require(len(keys) >= 2 or labels[keys[0]]["count"] >= 2)
             if seed["relation"] == "equivalent":
                 _require(all(labels[key]["context_key"] == scope_key(request["shared_context"]) and labels[key]["count"] == len(labels[key]["occurrences"]) for key in keys), "unresolved_reference")
         for prior in _index(data["prior_proposals"], "classify_proposal", "proposal_key").values():
@@ -337,15 +338,17 @@ def _group_proposal(proposal: dict, request: dict, unit: dict, supports: dict) -
     _text(proposal["proposal_key"], 300)
     _require(proposal["relation"] in ("equivalent", "related", "ambiguous"))
     keys = _keys(proposal["unit_keys"])
-    _require(len(keys) >= 2 and set(keys) <= set(unit["member_keys"]), "unresolved_reference")
+    _require(bool(keys) and set(keys) <= set(unit["member_keys"]), "unresolved_reference")
     labels = {label["unit_key"]: label for label in request["data"]["labels"]}
+    _require(len(keys) >= 2 or labels[keys[0]]["count"] >= 2, "unresolved_reference")
     issues = {}
     for issue in _array(proposal["membership_issues"]):
         _closed(issue, "membership_issue")
         _require(issue["unit_key"] in keys and issue["unit_key"] not in issues, "unresolved_reference")
         _text(issue["reason"], 300)
         issues[issue["unit_key"]] = issue["reason"]
-    allowed = {support for key in keys for occurrence in labels[key]["occurrences"] for support in occurrence["support_keys"]}
+    member_records = {occurrence["record_key"] for key in keys for occurrence in labels[key]["occurrences"]}
+    allowed = {key for key, support in supports.items() if support["record_key"] in member_records}
     cited = set(_keys(proposal["support_keys"]))
     _require(bool(cited) and cited <= allowed, "unresolved_reference")
     unsafe = {key for key in keys if labels[key]["context_key"] != scope_key(request["shared_context"])

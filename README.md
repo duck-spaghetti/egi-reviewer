@@ -86,3 +86,8 @@ Package0.5.0b2 adds `review.classification.propose(request)` as a conservative
 exact-label/actual-alias baseline and contextual classification prompt policies.
 Optional semantic analysis still uses `review.workbench.interpret` with one injected
 exchange; no model or provider dependency is added.
+
+Package0.5.0 adds `review.grouping.propose(request)` and the contextual group task
+prompt. Literal spelling variants preserve every original occurrence; semantic
+equivalent/related/ambiguous proposals remain optional and require review. Record,
+label-inventory and comparison coverage stay distinct. No taxonomy/entity merge.

@@ -9,7 +9,8 @@ produces one task prompt/schema, and makes at most one injected Adapter exchange
 
 Public functions are `validate_request(request)`, `validate_result(result, request)`,
 `interpret(request, adapter)`, `instructions(request)`, `output_schema(request)`,
-`input_bound(request)`, `request_digest(request)` and `scope_key(shared_context)`.
+`input_bound(request)`, `request_digest(request)`, `scope_key(shared_context)` and
+`normalize_label(value)`.
 Returned objects are independent copies. The caller retains Adapter usage even if
 semantic validation fails. No database, credential, importer or transport dependency.
 
@@ -133,3 +134,52 @@ fixed-epoch builds match SHA256
 The50-record/100-basis deterministic path measured7.539ms per call (best of3×100),
 including request validation and result reconciliation. No predecessor classification
 API exists for a comparable baseline; B05 request validation alone measured1.684ms.
+
+## Contextual grouping — B07
+
+`review.grouping.propose(request)` normalizes literal labels with NFC, casefold and
+whitespace only. It preserves accents, punctuation and word order. Stable local
+proposal keys bind comparison scope and members; all original variants, counts,
+version-bound occurrences and support remain in the immutable request. One label
+unit with multiple complete occurrences is a valid group, including a singleton
+`unit_keys` array; distinct label-unit count never substitutes occurrence count.
+
+Deterministic `equivalent` means literal spelling variants in the frozen scope,
+always with empty category choices. It cannot discover same-scope homonyms from
+spelling alone. Original descriptions/context and prior alternatives let optional
+semantic comparison downgrade to `related`/`ambiguous`; human review is still needed.
+Description-origin interpreted units never become deterministic literal equivalence.
+Unknown/mixed contexts and unsampled occurrences produce ambiguous proposals with
+membership issues and no mapping. A valid insufficient-context abstention analyzes
+only its supplied comparison; omitted inventory/occurrences stay incomplete.
+
+The group prompt distinguishes related offers from synonyms, original quotations
+from prior AI summaries, literal labels from materialized description interpretations,
+and required comparison scopes from reference-only records. Cross-source comparison
+retains original source/version/territory/axis binding. A prior alternative absent
+from this catalog slice must be omitted with `incomplete_catalog`, never resolved to
+an invented or unavailable target. No taxonomy reorganization, term/entity/service
+merge, canonical write, or automatic group mapping is part of this library.
+Group reasons/choices may cite any exact supplied source/metadata support belonging
+to records of proposed member occurrences, including their contextual descriptions;
+unrelated packet records remain forbidden and metadata provenance stays explicit.
+
+The12 grouping tests cover normalized variants, accents/punctuation, coalesced
+singletons, homonym scopes, incomplete occurrences, interpreted originals, related
+education, cross-source original evidence/prior alternatives, long-tail inventory,
+reference-only coverage and closed output authority. Fixtures are synthetic;
+controlled semantic outputs do not establish real-model precision or recall.
+
+B07 candidate0.5.0:99 source and99 isolated installed-wheel tests passed, including
+the unchanged60 legacy cases. Two fixed-epoch builds match SHA256
+`4c8d035e129790971cba6c5db610597f0ad748f19762a2bb3abf14eed467138a`.
+The frozen SQL031/032 synthetic request digest
+`b0c761337c08c09745588926af210478ae270dce93221ab3ac4445a76ba49bd0`
+also validates unchanged. Group instructions/schema occupy7257 JSON-framed bytes,
+below the32768 cap. The50-label/100-basis deterministic comparison measured5.780ms
+per call (best of3×100), including request validation and result reconciliation;
+no predecessor grouping API exists for direct comparison. Source suite99 cases
+took0.072s; installed suite0.073s. No live IA/provider credential or shared venv.
+Artifacts live in the owned ignored `.local/artifacts/community-cw1/` directory.
+The input-only historical `blocked_records` limitation is accepted in frozen
+provider requests; output diagnostics remain the closed19-code profile.
